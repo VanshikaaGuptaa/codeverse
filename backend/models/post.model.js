@@ -15,6 +15,11 @@ const postSchema = new mongoose.Schema(
 			type: String,
 		  }
 	] ,
+  tags: {
+    type: [String],
+    default: [],
+  },
+  
     zip: {
       type: String, // <--- Add this field
     },

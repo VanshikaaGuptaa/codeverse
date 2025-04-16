@@ -1,5 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/protectRoute.js";
+import { getRelevantPosts } from "../controllers/post.controller.js";
+
 import {
 	commentOnPost,
 	createPost,
@@ -12,6 +14,7 @@ import {
 } from "../controllers/post.controller.js";
 
 const router = express.Router();
+router.get("/relevant", protectRoute, getRelevantPosts);
 
 router.get("/all", protectRoute, getAllPosts);
 router.get("/following", protectRoute, getFollowingPosts);

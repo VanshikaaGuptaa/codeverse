@@ -59,6 +59,11 @@ const userSchema = new mongoose.Schema(
 				default: [],
 			},
 		],
+		tags: {
+			type: [String],
+			default: [],
+		  },
+		  
 	},
 	{ timestamps: true }
 );

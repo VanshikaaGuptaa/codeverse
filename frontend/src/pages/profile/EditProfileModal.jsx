@@ -8,9 +8,12 @@ const EditProfileModal = ({ authUser }) => {
 		email: "",
 		bio: "",
 		link: "",
+		tags: [],
 		newPassword: "",
 		currentPassword: "",
 	});
+
+	const [tagsInput, setTagsInput] = useState(""); // Separate input state for tags
 
 	const { updateProfile, isUpdatingProfile } = useUpdateUserProfile();
 
@@ -26,11 +29,24 @@ const EditProfileModal = ({ authUser }) => {
 				email: authUser.email,
 				bio: authUser.bio,
 				link: authUser.link,
+				tags: authUser.tags || [],
 				newPassword: "",
 				currentPassword: "",
 			});
+			setTagsInput((authUser.tags || []).join(", ")); // set input field text
 		}
 	}, [authUser]);
+
+	// Keep tags in sync when user edits the input
+	const handleTagsChange = (e) => {
+		const value = e.target.value;
+		setTagsInput(value);
+		const parsedTags = value
+			.split(",")
+			.map((tag) => tag.trim().toLowerCase())
+			.filter((tag) => tag);
+		setFormData((prev) => ({ ...prev, tags: parsedTags }));
+	};
 
 	return (
 		<>
@@ -68,6 +84,7 @@ const EditProfileModal = ({ authUser }) => {
 								onChange={handleInputChange}
 							/>
 						</div>
+
 						<div className='flex flex-wrap gap-2'>
 							<input
 								type='email'
@@ -85,6 +102,20 @@ const EditProfileModal = ({ authUser }) => {
 								onChange={handleInputChange}
 							/>
 						</div>
+
+						{/* ✅ TAG INPUT */}
+						<div>
+							<label className='text-sm font-medium mb-1'>Your Interests (comma separated)</label>
+							<input
+								type='text'
+								placeholder='e.g. react, node, mongodb'
+								className='input border border-gray-700 rounded p-2 input-md w-full'
+								value={tagsInput}
+								name='tags'
+								onChange={handleTagsChange}
+							/>
+						</div>
+
 						<div className='flex flex-wrap gap-2'>
 							<input
 								type='password'
@@ -103,6 +134,7 @@ const EditProfileModal = ({ authUser }) => {
 								onChange={handleInputChange}
 							/>
 						</div>
+
 						<input
 							type='text'
 							placeholder='Link'
@@ -111,6 +143,7 @@ const EditProfileModal = ({ authUser }) => {
 							name='link'
 							onChange={handleInputChange}
 						/>
+
 						<button className='btn btn-primary rounded-full btn-sm text-white'>
 							{isUpdatingProfile ? "Updating..." : "Update"}
 						</button>
@@ -123,4 +156,5 @@ const EditProfileModal = ({ authUser }) => {
 		</>
 	);
 };
+
 export default EditProfileModal;

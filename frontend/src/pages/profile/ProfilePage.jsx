@@ -202,6 +202,19 @@ const ProfilePage = () => {
 									</div>
 								</div>
 							</div>
+							{user?.tags?.length > 0 && (
+  							<div className='flex flex-wrap gap-2 mt-2'>
+    							{user.tags.map((tag, idx) => (
+     	 <span
+        key={idx}
+        className='bg-gray-800 text-white px-3 py-1 text-xs rounded-full'
+      >
+        #{tag}
+      </span>
+    ))}
+  </div>
+)}
+
 							<div className='flex w-full border-b border-gray-700 mt-4'>
 								<div
 									className='flex justify-center flex-1 p-3 hover:bg-secondary transition duration-300 relative cursor-pointer'
