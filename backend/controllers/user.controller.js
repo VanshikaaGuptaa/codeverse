@@ -61,29 +61,43 @@ export const followUnfollowUser = async (req, res) => {
 export const getSuggestedUsers = async (req, res) => {
 	try {
 		const userId = req.user._id;
+		const currentUser = await User.findById(userId).lean();
 
-		const usersFollowedByMe = await User.findById(userId).select("following");
+		if (!currentUser) return res.status(404).json({ error: "User not found" });
 
-		const users = await User.aggregate([
-			{
-				$match: {
-					_id: { $ne: userId },
-				},
-			},
-			{ $sample: { size: 10 } },
-		]);
+		const allUsers = await User.find({ _id: { $ne: userId } })
+			.select("-password")
+			.lean();
 
-		const filteredUsers = users.filter((user) => !usersFollowedByMe.following.includes(user._id));
-		const suggestedUsers = filteredUsers.slice(0, 4);
+		// Exclude people already followed
+		const notFollowedUsers = allUsers.filter(
+			(user) => !currentUser.following.includes(user._id)
+		);
 
-		suggestedUsers.forEach((user) => (user.password = null));
+		// Calculate tag match score
+		const userTags = (currentUser.tags || []).map((tag) => tag.toLowerCase());
 
-		res.status(200).json(suggestedUsers);
+		const scoredUsers = notFollowedUsers.map((user) => {
+			const matchCount = (user.tags || []).filter((tag) =>
+				userTags.includes(tag.toLowerCase())
+			).length;
+
+			return { ...user, matchCount };
+		});
+
+		// Sort by tag match count (descending)
+		scoredUsers.sort((a, b) => b.matchCount - a.matchCount);
+
+		// Return top 4 suggestions
+		const topSuggestions = scoredUsers.slice(0, 4);
+
+		res.status(200).json(topSuggestions);
 	} catch (error) {
-		console.log("Error in getSuggestedUsers: ", error.message);
+		console.log("Error in getSuggestedUsers:", error.message);
 		res.status(500).json({ error: error.message });
 	}
 };
+
 
 export const updateUser = async (req, res) => {
 	const { fullName, email, username, currentPassword, newPassword, bio, link, tags } = req.body;

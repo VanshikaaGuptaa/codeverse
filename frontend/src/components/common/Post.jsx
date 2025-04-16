@@ -13,11 +13,14 @@ import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post }) => {
   const [comment, setComment] = useState("");
-  const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+  const { data: authUser, isLoading } = useQuery({ queryKey: ["authUser"] });
   const queryClient = useQueryClient();
+
+  // 🛡️ Guard: don't render until authUser & post.user are available
+  if (isLoading || !authUser || !post?.user) return null;
+
   const postOwner = post.user;
   const isLiked = post.likes.includes(authUser._id);
-
   const isMyPost = authUser._id === post.user._id;
   const formattedDate = formatPostDate(post.createdAt);
 
@@ -46,9 +49,9 @@ const Post = ({ post }) => {
       return data;
     },
     onSuccess: (updatedLikes) => {
-      queryClient.setQueryData(["posts"], (oldData) => {
-        return oldData.map((p) => (p._id === post._id ? { ...p, likes: updatedLikes } : p));
-      });
+      queryClient.setQueryData(["posts"], (oldData) =>
+        oldData.map((p) => (p._id === post._id ? { ...p, likes: updatedLikes } : p))
+      );
     },
     onError: (error) => toast.error(error.message),
   });
@@ -204,7 +207,6 @@ const Post = ({ post }) => {
               </form>
             </dialog>
 
-            {/* Repost */}
             <div className='flex gap-1 items-center group cursor-pointer'>
               <BiRepost className='w-6 h-6 text-slate-500 group-hover:text-green-500' />
               <span className='text-sm text-slate-500 group-hover:text-green-500'>0</span>
@@ -229,7 +231,6 @@ const Post = ({ post }) => {
             </div>
           </div>
 
-          {/* Bookmark */}
           <div className='flex w-1/3 justify-end gap-2 items-center'>
             <FaRegBookmark className='w-4 h-4 text-slate-500 cursor-pointer' />
           </div>
