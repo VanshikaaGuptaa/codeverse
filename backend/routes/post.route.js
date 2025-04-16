@@ -1,7 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/protectRoute.js";
 import { getRelevantPosts } from "../controllers/post.controller.js";
-
+import { searchPostsByTag } from "../controllers/post.controller.js";
 import {
 	commentOnPost,
 	createPost,
@@ -15,7 +15,7 @@ import {
 
 const router = express.Router();
 router.get("/relevant", protectRoute, getRelevantPosts);
-
+router.get("/search", protectRoute, searchPostsByTag);
 router.get("/all", protectRoute, getAllPosts);
 router.get("/following", protectRoute, getFollowingPosts);
 router.get("/likes/:id", protectRoute, getLikedPosts);

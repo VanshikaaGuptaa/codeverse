@@ -3,7 +3,7 @@ import Post from "../models/post.model.js";
 import User from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 
-// Create Post
+// CREATE POST
 export const createPost = async (req, res) => {
   try {
     const { text, tags = [] } = req.body;
@@ -38,7 +38,7 @@ export const createPost = async (req, res) => {
       text,
       img: uploadedImages,
       zip,
-      tags,
+      tags: tags.map((t) => t.trim().toLowerCase()),
     });
 
     await newPost.save();
@@ -49,7 +49,7 @@ export const createPost = async (req, res) => {
   }
 };
 
-// Delete Post
+// DELETE POST
 export const deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -79,7 +79,7 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// Comment on Post
+// COMMENT
 export const commentOnPost = async (req, res) => {
   try {
     const { text } = req.body;
@@ -104,7 +104,7 @@ export const commentOnPost = async (req, res) => {
   }
 };
 
-// Like/Unlike Post
+// LIKE / UNLIKE
 export const likeUnlikePost = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -119,9 +119,7 @@ export const likeUnlikePost = async (req, res) => {
       await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
       await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
 
-      const updatedLikes = post.likes.filter(
-        (id) => id.toString() !== userId.toString()
-      );
+      const updatedLikes = post.likes.filter(id => id.toString() !== userId.toString());
       return res.status(200).json(updatedLikes);
     } else {
       post.likes.push(userId);
@@ -144,13 +142,13 @@ export const likeUnlikePost = async (req, res) => {
   }
 };
 
-// Get All Posts
+// GET ALL POSTS
 export const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
-      .populate({ path: "user", select: "-password" })
-      .populate({ path: "comments.user", select: "-password" });
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
 
     return res.status(200).json(posts || []);
   } catch (error) {
@@ -159,7 +157,7 @@ export const getAllPosts = async (req, res) => {
   }
 };
 
-// Get Liked Posts
+// GET LIKED POSTS
 export const getLikedPosts = async (req, res) => {
   const userId = req.params.id;
 
@@ -168,8 +166,8 @@ export const getLikedPosts = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const likedPosts = await Post.find({ _id: { $in: user.likedPosts } })
-      .populate({ path: "user", select: "-password" })
-      .populate({ path: "comments.user", select: "-password" });
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
 
     return res.status(200).json(likedPosts);
   } catch (error) {
@@ -178,7 +176,7 @@ export const getLikedPosts = async (req, res) => {
   }
 };
 
-// Get Following Posts
+// GET FOLLOWING POSTS
 export const getFollowingPosts = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -187,8 +185,8 @@ export const getFollowingPosts = async (req, res) => {
 
     const feedPosts = await Post.find({ user: { $in: user.following } })
       .sort({ createdAt: -1 })
-      .populate({ path: "user", select: "-password" })
-      .populate({ path: "comments.user", select: "-password" });
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
 
     return res.status(200).json(feedPosts);
   } catch (error) {
@@ -197,7 +195,7 @@ export const getFollowingPosts = async (req, res) => {
   }
 };
 
-// Get User Posts
+// GET POSTS OF SPECIFIC USER
 export const getUserPosts = async (req, res) => {
   try {
     const { username } = req.params;
@@ -206,8 +204,8 @@ export const getUserPosts = async (req, res) => {
 
     const posts = await Post.find({ user: user._id })
       .sort({ createdAt: -1 })
-      .populate({ path: "user", select: "-password" })
-      .populate({ path: "comments.user", select: "-password" });
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
 
     return res.status(200).json(posts);
   } catch (error) {
@@ -215,26 +213,25 @@ export const getUserPosts = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-// Get Relevant Posts based on tag match
+
+// GET RELEVANT POSTS
 export const getRelevantPosts = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const userTags = user.tags || [];
+    const userTags = (user.tags || []).map((t) => t.toLowerCase());
 
     let posts = await Post.find()
-      .populate({ path: "user", select: "-password" })
-      .populate({ path: "comments.user", select: "-password" });
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
 
     posts = posts.map((post) => {
-      const postTags = post.tags || [];
-      const matchCount = postTags.filter(tag =>
-        userTags.includes(tag.toLowerCase())
-      ).length;
+      const postTags = (post.tags || []).map((t) => t.toLowerCase());
+      const matchCount = postTags.filter(tag => userTags.includes(tag)).length;
 
       return { ...post._doc, relevance: matchCount };
     });
 
-    posts.sort((a, b) => 
+    posts.sort((a, b) =>
       b.relevance === a.relevance
         ? new Date(b.createdAt) - new Date(a.createdAt)
         : b.relevance - a.relevance
@@ -244,5 +241,35 @@ export const getRelevantPosts = async (req, res) => {
   } catch (error) {
     console.log("Error in getRelevantPosts controller:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// SEARCH POSTS BY TAG
+export const searchPostsByTag = async (req, res) => {
+  try {
+    const { tag } = req.query;
+
+    if (!tag || tag.trim() === "") {
+      return res.status(400).json({ error: "Search tag is required" });
+    }
+
+    const keywords = tag
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
+
+    if (keywords.length === 0) {
+      return res.status(400).json({ error: "No valid tags provided" });
+    }
+
+    const posts = await Post.find({ tags: { $in: keywords } })
+      .sort({ createdAt: -1 })
+      .populate("user", "-password")
+      .populate("comments.user", "-password");
+
+    return res.status(200).json(posts);
+  } catch (error) {
+    console.error("Error in searchPostsByTag:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

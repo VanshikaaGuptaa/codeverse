@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-
+import SearchPage from "./pages/search/SearchPage";
 import HomePage from "./pages/home/HomePage";
 import LoginPage from "./pages/auth/login/LoginPage";
 import SignUpPage from "./pages/auth/signup/SignUpPage";
@@ -47,6 +47,7 @@ function App() {
 			{/* Common component, bc it's not wrapped with Routes */}
 			{authUser && <Sidebar />}
 			<Routes>
+			<Route path='/search' element={authUser ? <SearchPage /> : <Navigate to='/login' />} />
 				<Route path='/' element={authUser ? <HomePage /> : <Navigate to='/login' />} />
 				<Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to='/' />} />
 				<Route path='/signup' element={!authUser ? <SignUpPage /> : <Navigate to='/' />} />
