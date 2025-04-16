@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 
 const CreatePost = () => {
   const [text, setText] = useState("");
-  const [img, setImg] = useState(null);
+  const [images, setImages] = useState([]); // multiple images
   const [zip, setZip] = useState(null);
 
   const imgRef = useRef(null);
@@ -29,7 +29,7 @@ const CreatePost = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text, img, zip }),
+          body: JSON.stringify({ text, img, zip }), // img is now an array
         });
         const data = await res.json();
         if (!res.ok) {
@@ -43,7 +43,7 @@ const CreatePost = () => {
 
     onSuccess: () => {
       setText("");
-      setImg(null);
+      setImages([]);
       setZip(null);
       toast.success("Post created successfully");
       queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -52,26 +52,29 @@ const CreatePost = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    createPost({ text, img, zip });
+    createPost({ text, img: images, zip });
   };
 
-  // Handle image selection
+  // Handle multiple image selection
   const handleImgChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImg(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    const files = Array.from(e.target.files);
+    const readers = files.map(
+      (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        })
+    );
+    Promise.all(readers)
+      .then((base64s) => setImages((prev) => [...prev, ...base64s]))
+      .catch((err) => console.error("Image read error:", err));
   };
 
-  // Handle zip file selection
   const handleZipChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Optional: check file size or file type here
       const reader = new FileReader();
       reader.onload = () => {
         setZip(reader.result);
@@ -80,13 +83,18 @@ const CreatePost = () => {
     }
   };
 
+  const removeImage = (idx) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   return (
     <div className='flex p-4 items-start gap-4 border-b border-gray-700'>
       <div className='avatar'>
         <div className='w-8 rounded-full'>
-          <img src={authUser.profileImg || "/avatar-placeholder.png"} />
+          <img src={authUser?.profileImg || "/avatar-placeholder.png"} />
         </div>
       </div>
+
       <form className='flex flex-col gap-2 w-full' onSubmit={handleSubmit}>
         <textarea
           className='textarea w-full p-0 text-lg resize-none border-none focus:outline-none  border-gray-800'
@@ -94,17 +102,19 @@ const CreatePost = () => {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        {/* PREVIEW IMAGE IF EXISTS */}
-        {img && (
-          <div className='relative w-72 mx-auto'>
-            <IoCloseSharp
-              className='absolute top-0 right-0 text-white bg-gray-800 rounded-full w-5 h-5 cursor-pointer'
-              onClick={() => {
-                setImg(null);
-                imgRef.current.value = null;
-              }}
-            />
-            <img src={img} className='w-full mx-auto h-72 object-contain rounded' />
+
+        {/* PREVIEW MULTIPLE IMAGES */}
+        {images.length > 0 && (
+          <div className='flex gap-2 overflow-x-auto py-2'>
+            {images.map((img, idx) => (
+              <div key={idx} className='relative w-32 h-32 flex-shrink-0'>
+                <img src={img} alt={`upload-${idx}`} className='w-full h-full object-cover rounded border' />
+                <IoCloseSharp
+                  className='absolute top-1 right-1 text-white bg-black/70 rounded-full w-5 h-5 cursor-pointer'
+                  onClick={() => removeImage(idx)}
+                />
+              </div>
+            ))}
           </div>
         )}
 
@@ -122,6 +132,7 @@ const CreatePost = () => {
           </div>
         )}
 
+        {/* ACTIONS */}
         <div className='flex justify-between border-t py-2 border-t-gray-700'>
           <div className='flex gap-2 items-center'>
             <CiImageOn
@@ -129,7 +140,6 @@ const CreatePost = () => {
               onClick={() => imgRef.current.click()}
             />
             <BsEmojiSmileFill className='fill-primary w-5 h-5 cursor-pointer' />
-            {/* Button to pick a zip */}
             <button
               type='button'
               className='text-sm underline'
@@ -139,9 +149,11 @@ const CreatePost = () => {
             </button>
           </div>
 
+          {/* HIDDEN FILE INPUTS */}
           <input
             type='file'
             accept='image/*'
+            multiple
             hidden
             ref={imgRef}
             onChange={handleImgChange}

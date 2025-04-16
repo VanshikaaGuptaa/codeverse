@@ -4,52 +4,49 @@ import User from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 
 export const createPost = async (req, res) => {
-  try {
-    const { text } = req.body;
-    let { img, zip } = req.body;
-    const userId = req.user._id.toString();
-
-    // Ensure the user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Must have at least text, image, or a zip file
-    if (!text && !img && !zip) {
-      return res
-        .status(400)
-        .json({ error: "Post must have text, image, or zip file" });
-    }
-
-    // Upload image if present
-    if (img) {
-      const uploadedResponse = await cloudinary.uploader.upload(img);
-      img = uploadedResponse.secure_url;
-    }
-
-    // Upload zip if present (using resource_type: "raw")
-    if (zip) {
-      const uploadedZip = await cloudinary.uploader.upload(zip, {
-        resource_type: "raw",
-      });
-      zip = uploadedZip.secure_url;
-    }
-
-    const newPost = new Post({
-      user: userId,
-      text,
-      img,
-      zip, // include the zip URL
-    });
-
-    await newPost.save();
-    return res.status(201).json(newPost);
-  } catch (error) {
-    console.log("Error in createPost controller: ", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
+	try {
+	  const { text } = req.body;
+	  let { img = [], zip } = req.body;
+	  const userId = req.user._id.toString();
+  
+	  const user = await User.findById(userId);
+	  if (!user) return res.status(404).json({ message: "User not found" });
+  
+	  if (!text && img.length === 0 && !zip) {
+		return res.status(400).json({ error: "Post must have text, image, or zip file" });
+	  }
+  
+	  const uploadedImages = [];
+  
+	  if (Array.isArray(img) && img.length > 0) {
+		for (const image of img) {
+		  const uploaded = await cloudinary.uploader.upload(image);
+		  uploadedImages.push(uploaded.secure_url);
+		}
+	  }
+  
+	  if (zip) {
+		const uploadedZip = await cloudinary.uploader.upload(zip, {
+		  resource_type: "raw",
+		});
+		zip = uploadedZip.secure_url;
+	  }
+  
+	  const newPost = new Post({
+		user: userId,
+		text,
+		img: uploadedImages,
+		zip,
+	  });
+  
+	  await newPost.save();
+	  return res.status(201).json(newPost);
+	} catch (error) {
+	  console.log("Error in createPost controller: ", error);
+	  return res.status(500).json({ error: "Internal server error" });
+	}
+  };
+  
 
 export const deletePost = async (req, res) => {
   try {
@@ -58,20 +55,19 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    // Check ownership
     if (post.user.toString() !== req.user._id.toString()) {
-      return res
-        .status(401)
-        .json({ error: "You are not authorized to delete this post" });
+      return res.status(401).json({ error: "You are not authorized to delete this post" });
     }
 
-    // If there's an attached image, remove it from Cloudinary
-    if (post.img) {
-      const imgId = post.img.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(imgId); // default resource_type: "image"
+    // Delete all images from Cloudinary
+    if (Array.isArray(post.img)) {
+      for (const imgUrl of post.img) {
+        const imgId = imgUrl.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(imgId);
+      }
     }
 
-    // If there's a zip, remove it using resource_type: "raw"
+    // Delete zip file
     if (post.zip) {
       const zipId = post.zip.split("/").pop().split(".")[0];
       await cloudinary.uploader.destroy(zipId, { resource_type: "raw" });
@@ -117,14 +113,11 @@ export const likeUnlikePost = async (req, res) => {
     const { id: postId } = req.params;
 
     const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
-    }
+    if (!post) return res.status(404).json({ error: "Post not found" });
 
     const userLikedPost = post.likes.includes(userId);
 
     if (userLikedPost) {
-      // Unlike
       await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
       await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
 
@@ -133,7 +126,6 @@ export const likeUnlikePost = async (req, res) => {
       );
       return res.status(200).json(updatedLikes);
     } else {
-      // Like
       post.likes.push(userId);
       await post.save();
 
@@ -146,8 +138,7 @@ export const likeUnlikePost = async (req, res) => {
       });
       await notification.save();
 
-      const updatedLikes = post.likes;
-      return res.status(200).json(updatedLikes);
+      return res.status(200).json(post.likes);
     }
   } catch (error) {
     console.log("Error in likeUnlikePost controller: ", error);
@@ -159,20 +150,10 @@ export const getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password",
-      })
-      .populate({
-        path: "comments.user",
-        select: "-password",
-      });
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.user", select: "-password" });
 
-    if (!posts.length) {
-      return res.status(200).json([]);
-    }
-
-    return res.status(200).json(posts);
+    return res.status(200).json(posts || []);
   } catch (error) {
     console.log("Error in getAllPosts controller: ", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -187,14 +168,8 @@ export const getLikedPosts = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const likedPosts = await Post.find({ _id: { $in: user.likedPosts } })
-      .populate({
-        path: "user",
-        select: "-password",
-      })
-      .populate({
-        path: "comments.user",
-        select: "-password",
-      });
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.user", select: "-password" });
 
     return res.status(200).json(likedPosts);
   } catch (error) {
@@ -209,17 +184,10 @@ export const getFollowingPosts = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const following = user.following;
-    const feedPosts = await Post.find({ user: { $in: following } })
+    const feedPosts = await Post.find({ user: { $in: user.following } })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password",
-      })
-      .populate({
-        path: "comments.user",
-        select: "-password",
-      });
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.user", select: "-password" });
 
     return res.status(200).json(feedPosts);
   } catch (error) {
@@ -231,20 +199,13 @@ export const getFollowingPosts = async (req, res) => {
 export const getUserPosts = async (req, res) => {
   try {
     const { username } = req.params;
-
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const posts = await Post.find({ user: user._id })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "user",
-        select: "-password",
-      })
-      .populate({
-        path: "comments.user",
-        select: "-password",
-      });
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.user", select: "-password" });
 
     return res.status(200).json(posts);
   } catch (error) {
