@@ -78,6 +78,14 @@ const Sidebar = () => {
     <span className='text-lg hidden md:block'>Search</span>
   </Link>
 </li>
+<Link
+  to='/community'
+  className='flex gap-3 items-center hover:bg-stone-900 transition-all rounded-full duration-300 py-2 pl-2 pr-4 max-w-fit cursor-pointer'
+>
+  <span className='w-6 h-6 text-lg'>🧠</span>
+  <span className='text-lg hidden md:block'>Community</span>
+</Link>
+
 
 				</ul>
 				{authUser && (
