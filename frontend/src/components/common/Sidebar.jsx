@@ -1,4 +1,5 @@
 import XSvg from "../svgs/X";
+import { FaUsers } from "react-icons/fa";
 
 import { MdHomeFilled } from "react-icons/md";
 import { IoNotifications } from "react-icons/io5";
@@ -82,9 +83,10 @@ const Sidebar = () => {
   to='/community'
   className='flex gap-3 items-center hover:bg-stone-900 transition-all rounded-full duration-300 py-2 pl-2 pr-4 max-w-fit cursor-pointer'
 >
-  <span className='w-6 h-6 text-lg'>🧠</span>
+  <FaUsers className='w-5 h-5 text-white' />
   <span className='text-lg hidden md:block'>Community</span>
 </Link>
+
 
 
 				</ul>

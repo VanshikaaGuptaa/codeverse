@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { FaPlus } from "react-icons/fa";
 import { toast } from "react-hot-toast";
@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 const CommunityPage = () => {
   const [tag, setTag] = useState("");
   const [searchTag, setSearchTag] = useState("");
-  const [answers, setAnswers] = useState({}); // to hold answers per question
+  const [answers, setAnswers] = useState({}); // store answers per question
 
   const { data: questions, refetch } = useQuery({
     queryKey: ["community", searchTag],
@@ -50,65 +50,71 @@ const CommunityPage = () => {
   };
 
   return (
-    <div className='p-4 min-h-screen relative'>
-      {/* Search Box */}
-      <form className='mb-4 flex gap-2' onSubmit={handleSearch}>
+    <div className='flex-[4_4_0] border-l border-r border-gray-700 min-h-screen p-4'>
+
+      {/* Middle Section */}
+      <div className='flex-1 max-w-4xl mx-auto'>
+
+        {/* Search */}
+        <form className='mb-4 flex gap-4 items-center'onSubmit={handleSearch}>
         <input
-          type='text'
-          className='input border border-gray-700 w-full'
-          placeholder='Search tag...'
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-        />
-        <button className='btn btn-primary'>Search</button>
-      </form>
+  type='text'
+  className='input border border-gray-700 flex-1'
+  placeholder='Search tag...'
+  value={tag}
+  onChange={(e) => setTag(e.target.value)}
+/>
 
-      {/* Questions List */}
-      {questions?.map((q) => (
-        <div key={q._id} className='p-4 border border-gray-700 rounded mb-4'>
-          <p className='font-bold mb-2'>{q.question}</p>
+          <button className='btn btn-primary'>Search</button>
+        </form>
 
-          <div className='mb-2 flex gap-2 flex-wrap'>
-            {q.tags.map((tag, i) => (
-              <span key={i} className='bg-gray-800 text-white px-2 py-1 rounded text-xs'>
-                #{tag}
-              </span>
-            ))}
-          </div>
+        {/* Questions */}
+        {questions?.map((q) => (
+          <div key={q._id} className='p-4 border border-gray-700 rounded mb-4'>
+            <p className='font-bold mb-2'>{q.question}</p>
 
-          <p className='text-sm mb-1 text-slate-400'>Answers:</p>
-          {q.answers.length === 0 && (
-            <p className='ml-2 text-xs text-slate-500'>No answers yet. Be the first to reply!</p>
-          )}
-          {q.answers.map((ans, i) => (
-            <div key={i} className='ml-2 mb-1'>
-              <strong>@{ans.user?.username || "User"}</strong>: {ans.text}
+            <div className='mb-2 flex gap-2 flex-wrap'>
+              {q.tags.map((tag, i) => (
+                <span key={i} className='bg-gray-800 text-white px-2 py-1 rounded text-xs'>
+                  #{tag}
+                </span>
+              ))}
             </div>
-          ))}
 
-          {/* Answer Input Box */}
-          <div className='mt-3 flex gap-2'>
-            <input
-              type='text'
-              className='input input-sm w-full border border-gray-600'
-              placeholder='Your answer...'
-              value={answers[q._id] || ""}
-              onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })}
-            />
-            <button
-              className='btn btn-sm btn-primary'
-              onClick={() => handleAnswerSubmit(q._id)}
-              disabled={answerMutation.isPending}
-            >
-              {answerMutation.isPending ? "Posting..." : "Post"}
-            </button>
+            <p className='text-sm mb-1 text-slate-400'>Answers:</p>
+            {q.answers.length === 0 && (
+              <p className='ml-2 text-xs text-slate-500'>No answers yet. Be the first to reply!</p>
+            )}
+            {q.answers.map((ans, i) => (
+              <div key={i} className='ml-2 mb-1'>
+                <strong>@{ans.user?.username || "User"}</strong>: {ans.text}
+              </div>
+            ))}
+
+            {/* Answer input */}
+            <div className='mt-3 flex gap-2'>
+              <input
+                type='text'
+                className='input input-sm w-full border border-gray-600'
+                placeholder='Your answer...'
+                value={answers[q._id] || ""}
+                onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })}
+              />
+              <button
+                className='btn btn-sm btn-primary'
+                onClick={() => handleAnswerSubmit(q._id)}
+                disabled={answerMutation.isPending}
+              >
+                {answerMutation.isPending ? "Posting..." : "Post"}
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {/* Floating Ask Button */}
       <button
-        className='fixed bottom-6 right-6 btn btn-primary rounded-full'
+        className='fixed bottom-6 left-1/2 transform -translate-x-1/2 btn btn-primary rounded-full z-50'
         onClick={() => document.getElementById("ask_modal").showModal()}
       >
         <FaPlus className='text-white' />
@@ -117,7 +123,10 @@ const CommunityPage = () => {
       {/* Ask Modal */}
       <dialog id='ask_modal' className='modal'>
         <div className='modal-box'>
-          <AskQuestionModal onClose={() => document.getElementById("ask_modal").close()} refetch={refetch} />
+          <AskQuestionModal
+            onClose={() => document.getElementById("ask_modal").close()}
+            refetch={refetch}
+          />
         </div>
         <form method='dialog' className='modal-backdrop'>
           <button>close</button>
@@ -138,7 +147,10 @@ const AskQuestionModal = ({ onClose, refetch }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
-          tags: tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
+          tags: tags
+            .split(",")
+            .map((t) => t.trim().toLowerCase())
+            .filter(Boolean),
         }),
       });
       const data = await res.json();
@@ -152,7 +164,6 @@ const AskQuestionModal = ({ onClose, refetch }) => {
     },
     onError: (err) => toast.error(err.message),
   });
-
 
   return (
     <form
