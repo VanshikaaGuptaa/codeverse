@@ -4,12 +4,13 @@ dozens of tools.
 
 
 **Key Features**
- **Personalised Feed**   Shows the most relevant posts first by matching post tags with the skills & interests on a user’s profile. |
- **Powerful Search**   Full-text + tag search with a dedicated results page and quick-access search in the sidebar. |
- **Request-Based Messaging**   “Message” button on every profile opens a dialog → receiver approves or blocks → chat appears in both users’ **Messages** page. |
- **Community Q&A**  Ask questions, browse by tag, vote on answers, and mark the best one. |
- **Notifications**  Toast + inbox notifications for message requests, approvals, answers, and mentions. |
- **Responsive UI**  Built with React, Vite, TailwindCSS, and shadcn/ui for a clean, accessible design. |
+
+ **Personalised Feed**   Shows the most relevant posts first by matching post tags with the skills & interests on a user’s profile. </br>
+ **Powerful Search**   Full-text + tag search with a dedicated results page and quick-access search in the sidebar. </br>
+ **Request-Based Messaging**   “Message” button on every profile opens a dialog → receiver approves or blocks → chat appears in both users’ **Messages** page. </br>
+ **Community Q&A**  Ask questions, browse by tag, vote on answers, and mark the best one. </br>
+ **Notifications**  Toast + inbox notifications for message requests, approvals, answers, and mentions. </br>
+ **Responsive UI**  Built with React, Vite, TailwindCSS, and shadcn/ui for a clean, accessible design. </br>
 
 
 **Deployment**
