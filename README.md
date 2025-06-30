@@ -30,3 +30,24 @@ dozens of tools.
 6  cd frontend</br>
 7  npm run dev</br>
 8  localhost3000</br>
+
+
+**Screenshots**
+![Screenshot 2025-04-27 184110](https://github.com/user-attachments/assets/2e3cf736-41ee-4bb7-9e36-d89746b29237)
+
+![Screenshot 2025-04-27 184142](https://github.com/user-attachments/assets/fb5bef5b-28b2-48e1-b14c-c65f6e43c03e)
+
+![Screenshot 2025-04-27 184313](https://github.com/user-attachments/assets/165aec27-a26f-44dc-9627-b0f68ce2826c)
+
+![Screenshot 2025-04-27 184357](https://github.com/user-attachments/assets/28b9761a-7ec7-4570-84bc-3e117c19f955)
+
+![Screenshot 2025-04-27 184418](https://github.com/user-attachments/assets/63db767c-723c-4ee4-8ffd-37255b700cb6)
+
+![Screenshot 2025-04-27 184434](https://github.com/user-attachments/assets/c9951004-843c-40f9-8069-d08341fcb9a2)
+
+![Screenshot 2025-04-27 184550](https://github.com/user-attachments/assets/4ae43f19-344a-42af-a1ad-f974af79cde1)
+
+![Screenshot 2025-04-27 184619](https://github.com/user-attachments/assets/39166d3f-3d28-40e3-9205-626fa22f6e8c)
+
+![Screenshot 2025-04-27 184634](https://github.com/user-attachments/assets/5e15b49d-a81e-4027-a35c-00b3b91c2471)
+
